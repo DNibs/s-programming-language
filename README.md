@@ -2,46 +2,121 @@
 
 Author: David Niblick  
 Start Date: 2 September 2025  
-Course: ECE 66400 (Computability, Complexity, and Languages) — Purdue University  
-Instructor: Professor Avi Kak  
+Course: ECE 66400 (Computability, Complexity, and Languages)
+Instructor: Professor Avi Kak 
+Purdue Universtiy, Robotic Vision Lab
 
 ---
 
 ## Overview
 
 This repository contains a Python interpreter for the minimalist programming language **S**, introduced in ECE66400.  
-Language S is defined with only three primitive instructions and operates over the domain of natural numbers.
-
-The three instructions:
+Language S is a register-machine–style language defined with only three primitive instructions:
 
 1. `variable = variable + 1`  
-2. `variable = variable - 1`  (floored at 0)  
+2. `variable = variable - 1` (floored at 0)  
 3. `if variable != 0 goto L`  
 
-All computations operate over non-negative integers.  
-The distinguished output variable is **`y`**, which always starts at 0.  
-Programs can take multiple inputs (`x1`, `x2`, etc)
-
-Additional internal variables (`z`, `z1`, etc.) are created on demand and initialized to 0.  
+All computations operate over natural numbers (no negatives).  
+The distinguished output variable **`y`** always starts at 0.  
+Programs may take multiple input variables (`x1`, `x2`, …).  
+Additional temporary variables are created on demand and start at 0.  
 
 ---
 
 ## Features
 
-- **Core S semantics**: faithful execution of the three instructions.  
-- **Labels**: user-defined symbolic labels for human-readable control flow.  
-- **Macros**: higher-level constructs built entirely from the three primitives.  
-  - Parameterized macros allow code reuse (e.g., `("add", "y", "x1", "x2")`).  
-  - Macros are expanded before execution into flat S instructions with uniquified labels.  
-  - Keeps the theoretical purity of S while simplifying program design.  
-- **Safety**: configurable step limit prevents infinite loops.  
+- **Faithful S semantics**  
+  Executes only the three primitive operations over natural numbers.  
+
+- **Labels**  
+  Programs use symbolic labels for control flow. Each macro invocation dynamically generates unique suffixes (`__m0`, `__m1`, …) for its labels, so recursion and repeated calls are safe.  
+
+- **Macros**  
+  Higher-level abstractions built entirely from the three primitives.  
+  - **Parameterized**: pass variables and labels as arguments.  
+  - **Locals**: temporary variables declared with a leading underscore (e.g. `_z`) are renamed with a unique suffix at runtime, giving each macro call its own namespace.  
+  - **Recursive**: macros may call themselves (direct or mutual recursion).  
+
+- **Safety**  
+  Step limit prevents runaway infinite loops.  
 
 ---
 
-## Example Usage
+## Example 1: Simple Program
 
-### Program: Addition
+A program to add `x1` and `x2` into `y` using two `equals` macro calls and a loop:
 
-Define a macro to compute `dst = a + b`:
+```python
+import utils as s
 
-```py
+program = [
+    ('equals', 'y', 'x1'),   # y = x1
+    ('equals', 'z', 'x2'),   # z = x2
+
+    ('B:',),
+    ('jnz', 'z', 'A'),
+    ('goto', 'E'),
+
+    ('A:',),
+    ('dec', 'z'),
+    ('inc', 'y'),
+    ('goto', 'B'),
+
+    ('E:',),
+]
+
+print(s.run_program(program, {'x1': 7, 'x2': 3}, s.example_macros))  # → 10
+```
+
+---
+
+## Example 2: Writing a Macro
+
+'equals(y, x)'
+
+Copies the value of 'x' into 'y' without destroying 'x' but leveraging local variable '_z':
+
+```python
+"equals": (
+    ["y", "x"],
+    [
+        ("A:",),
+        ("jnz", "x", "B"),
+        ("goto", "C"),
+
+        ("B:",),
+        ("dec", "x"),
+        ("inc", "y"),
+        ("inc", "_z"),
+        ("goto", "A"),
+
+        ("C:",),
+        ("jnz", "_z", "D"),
+        ("goto", "E"),
+
+        ("D:",),
+        ("dec", "_z"),
+        ("inc", "x"),
+        ("goto", "C"),
+
+        ("E:",),
+    ],
+    ["_z"]  # declares local, gets suffix at runtime
+)
+```
+
+When called as '("equals", "y", "x1")', it expands into instructions where labels '(A, B, C, D, E)' and the local '_z' are automatically suffixed (e.g. 'A__m5', '_z__m5') to avoid collisions.
+
+---
+
+## Theoretical Context
+
+Despite its spartan instruction set, **S** can express arbitrary computations and is **Turing-complete**.
+This project illustrates how higher-level constructs (macros, loops, recursion) can be built purely from three primitive instructions, preserving theoretical elegance while enabling practical experimentation.
+
+---
+
+## License
+
+Educational use only. Author retains rights.
