@@ -292,10 +292,11 @@ example_macros = {
             ('dec', '_z2'),
             ('add', '_z1', 'x1', '_y'),
             ('equals', '_y', '_z1'), 
+            # not necessary in implementaion, but meets strict rigor per EC664
             ('goto', 'B'),
 
             ('E:',),
-            ('equals', 'y', '_z1'),  # copy result back to y
+            ('equals', 'y', '_y'),  # copy result back to y
         ],
         ['_z1', '_z2', '_y']  # locals to suffix at runtime
     )
