@@ -56,15 +56,15 @@ Additional temporary variables are created on demand and start at 0.
 
 - **Macro Expansion**  
   Local variable names are currently handled differently than as explained in ECE664 Lec4. However, namespace collision is still avoided.
-  
+
 ---
 
 ## Example 1: Simple Program
 
-A program to add `x1` and `x2` into `y` using two `equals` macro calls and a loop:
+A program to add `x1` and `x2` into `y` using two `equals` macro calls and a loop to labeled instructions:
 
 ```python
-import utils as s
+import s_programming_language as s
 
 program = [
     ('equals', 'y', 'x1'),   # y = x1
