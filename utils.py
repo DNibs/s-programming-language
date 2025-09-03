@@ -1,3 +1,8 @@
+# TODO: arg checks for natural numbers
+# TODO: add more macros, recursive macros
+# TODO: handle undefined states (such as x1-x2 when x2 > x1), possible "step count exceeded" print?
+# TODO: add states print ability 
+
 
 from itertools import count
 _call_ids = count()
@@ -35,6 +40,13 @@ def run_program(instructions, inputs=None, macros=None, max_steps=100000):
       Supports recursion via runtime call stack.
     """
     macros = macros or {}
+    inputs = inputs or {}
+    
+    # Validate inputs: must be non-negative integers
+    for name, val in inputs.items():
+        if not isinstance(val, int) or val < 0:
+            raise ValueError(f"Input {name} must be a non-negative integer, got {val}")
+
     vars = {**inputs} if inputs else {}
     vars["y"] = 0
 
@@ -135,9 +147,17 @@ def run_program(instructions, inputs=None, macros=None, max_steps=100000):
 
         steps += 1
 
+
+    if steps >= max_steps:
+        raise RuntimeError("Maximum step count exceeded; possible undefined condition")
+    
     return vars["y"]
 
+
+# Macros for the S-language interpreter.
+# These macros implement common operations like addition, subtraction, and equality checks.
 example_macros = {
+
     # Unconditional jump using local dummy _z
     "goto": (
         ["label",],
@@ -148,10 +168,26 @@ example_macros = {
         ["_z"]  # locals to suffix at runtime 
     ),
 
+    # Macro to set a variable to 0
+    # as implemented in EC664 lec 3 
+    'zeros': (
+        ['y',],
+        [
+            ('A:',),
+            ('dec', 'y'),
+            ('jnz', 'y', 'A'),
+        ],
+    ),
+
     # equals(y, x): copy x into y without destroying x, using LOCAL _z
+    # as implemented in EC664 lec 3 with one exception
     'equals': (
         ['y', 'x'],
         [
+            # initializes y to 0 to avoid cross-macro issues
+            # this is exception to EC664 lec 3 due to python implementation constraints on namespaces
+            ('zeros', 'y'),
+
             # Checks that x is already 0
             ('A:',),
             ('jnz', 'x', 'B'),
@@ -178,34 +214,90 @@ example_macros = {
             # E is always the exit label and must be at end
             ('E:',),
         ],
-        ['_z'] # locals to suffix at runtime 
+        ['_z'], # locals to suffix at runtime 
     ),
 
-    'zeros': (
-        ['y',],
-        [
-            ('A:',),
-            ('dec', 'y'),
-            ('jnz', 'y', 'A'),
-        ]
-    ),
 
+    # Macro to add two numbers x1 and x2, storing result in y
+    # as implemented in EC664 lec 3
     'add': (
         ['y', 'x1', 'x2'],
         [
-            ('equals', 'y', 'x1'),
-            ('equals', '_z1', 'x2'),
+            ('equals', '_y', 'x1'),
+            ('equals', '_z', 'x2'),
 
             ('B:',),
-            ('jnz', '_z1', 'A'),
+            ('jnz', '_z', 'A'),
             ('goto', 'E'),
 
             ('A:',),
-            ('dec', '_z1'),
-            ('inc', 'y'),
+            ('dec', '_z'),
+            ('inc', '_y'),
             ('goto', 'B'),
 
             ('E:',),
-        ]
+            ('equals', 'y', '_y'),  # copy result back to y
+        ],
+        ['_z', '_y'],  # locals to suffix at runtime
     ),
+
+    # Macro to subtract x2 from x1, storing result in y
+    # as implemented in EC664 lec 3
+    # NOTE: this is a non-standard subtraction that does not handle negative results
+    # it will loop up to step count maximum if x2 > x1 and throw an exception
+    'subtract': (
+        ['y', 'x1', 'x2'], # parameterized vars
+        [
+            # introduce dummy z to retain original x2
+            ('equals', '_y', 'x1'),
+            ('equals', '_z', 'x2'),
+
+            # check exit condition (z == 0)
+            ('C:',),
+            ('jnz', '_z', 'A'),
+            ('goto', 'E'),
+
+            # if y hits 0 (ie x2 > x1), enters infinite loop to avoid returning wrong value
+            # we treat infinite loop as an undefined state or exception
+            ('A:',),
+            ('jnz', '_y', 'B'),
+            ('goto', 'A'),
+
+            ('B:',),
+            ('dec', '_y'),
+            ('dec', '_z'),
+            ('goto', 'C'),
+
+            ('E:',),
+            ('equals', 'y', '_y'),  # copy result back to y
+        ],
+        ['_z'],  # locals to suffix at runtime
+    ),
+
+    # Macro to multiply x1 and x2, storing result in y
+    # as implemented in EC664 lec 3
+    'mul': (
+        ['y', 'x1', 'x2'],
+        [
+            # initiates dummy var
+            ('equals', '_z2', 'x2'),
+
+            # checks for exit condition (z2 == 0)
+            ('B:',),
+            ('jnz', '_z2', 'A'),
+            ('goto', 'E'),
+
+            # add x1 to y for every x2 (with z2 as interim var)
+            ('A:',),
+            ('dec', '_z2'),
+            ('add', '_z1', 'x1', '_y'),
+            ('equals', '_y', '_z1'), 
+            ('goto', 'B'),
+
+            ('E:',),
+            ('equals', 'y', '_z1'),  # copy result back to y
+        ],
+        ['_z1', '_z2', '_y']  # locals to suffix at runtime
+    )
 }
+
