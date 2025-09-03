@@ -137,7 +137,7 @@ def run_program(instructions, inputs=None, macros=None, max_steps=100000):
 
     return vars["y"]
 
-macros = {
+example_macros = {
     # Unconditional jump using local dummy _z
     "goto": (
         ["label",],
@@ -188,5 +188,24 @@ macros = {
             ('dec', 'y'),
             ('jnz', 'y', 'A'),
         ]
-    )
+    ),
+
+    'add': (
+        ['y', 'x1', 'x2'],
+        [
+            ('equals', 'y', 'x1'),
+            ('equals', '_z1', 'x2'),
+
+            ('B:',),
+            ('jnz', '_z1', 'A'),
+            ('goto', 'E'),
+
+            ('A:',),
+            ('dec', '_z1'),
+            ('inc', 'y'),
+            ('goto', 'B'),
+
+            ('E:',),
+        ]
+    ),
 }
