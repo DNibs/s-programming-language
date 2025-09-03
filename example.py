@@ -1,14 +1,14 @@
-import utils as s
+import s_programming_language as s
 
 
 
 
 
 program = [
-    ('mul', 'y', 'x1', 'x2'),
+    ('add', 'y', 'x1', 'x2'),
 
 ]
-print(s.run_program(program, {'x1':10, 'x2': 3}, s.example_macros))  
+print(s.run_program(program, {'x1':1, 'x2': 2}, s.example_macros, trace=True))  
 
 
 

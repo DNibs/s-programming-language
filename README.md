@@ -49,10 +49,14 @@ Additional temporary variables are created on demand and start at 0.
   Must declare the local variables used in macros. See example macros. 
 
 - **Y use in Macros**  
-  To avoid global variable problems, need to treat y as a local variable and copy to result y at end.  
+  To avoid global variable problems, macros treat y as a local variable and copy to result y at end.  
 
 - **Macro Exit**  
   Need to deliberately add [E] at end of macro instead. This is a convenient place to copy _y to result.
+
+- **Macro Expansion**  
+  Local variable names are currently handled differently than as explained in ECE664 Lec4. However, namespace collision is still avoided.
+  
 ---
 
 ## Example 1: Simple Program

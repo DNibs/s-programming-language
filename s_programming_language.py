@@ -22,7 +22,7 @@ def resolve_label_map(code, suffix):
     return flat, label_map
 
 
-def run_program(instructions, inputs=None, macros=None, max_steps=100000):
+def run_program(instructions, inputs=None, macros=None, max_steps=100000, trace=False):
     """
     Run the S-language interpreter with support for recursive macros.
 
@@ -62,6 +62,9 @@ def run_program(instructions, inputs=None, macros=None, max_steps=100000):
             stack.pop()  # return from macro or end of program
             continue
 
+        if trace:
+            print(f'Step: {steps} | Next: {instrs[pc]}  | vars={vars}\n')
+        
         op, *args = instrs[pc]
 
         # --- Primitive instructions ---
