@@ -3,6 +3,7 @@
 Author: David Niblick  
 Start Date: 2 September 2025  
 Course: ECE 66400 (Computability, Complexity, and Languages)
+Link: https://engineering.purdue.edu/kak/ComputabilityComplexityLanguages/
 Instructor: Professor Avi Kak 
 Purdue Universtiy, Robotic Vision Lab
 
