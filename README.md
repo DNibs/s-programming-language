@@ -120,3 +120,9 @@ This project illustrates how higher-level constructs (macros, loops, recursion) 
 ## License
 
 Educational use only. Author retains rights.
+
+---
+
+## Use of Gen AI
+
+ChatGPT was used during th development of this code.
