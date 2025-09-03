@@ -1,11 +1,9 @@
-# TODO: arg checks for natural numbers
-# TODO: add more macros, recursive macros
-# TODO: handle undefined states (such as x1-x2 when x2 > x1), possible "step count exceeded" print?
-# TODO: add states print ability 
-
+# s_programming_language.py
+# Author: David Niblick
+# Date: 20250903
 
 from itertools import count
-_call_ids = count()
+_call_ids = count()  # avoids namespace collision by generating unique suffixes for macro calls
 
 # Call stack holds (instructions, pc, label_map, var_mapping)
 # var_mapping: maps formal parameters -> actual variables
@@ -246,8 +244,8 @@ example_macros = {
 
     # Macro to subtract x2 from x1, storing result in y
     # as implemented in EC664 lec 3
-    # NOTE: this is a non-standard subtraction that does not handle negative results
-    # it will loop up to step count maximum if x2 > x1 and throw an exception
+    # This is a non-standard subtraction that does not handle negative results
+    # It will loop up to step count maximum if x2 > x1 and throw an exception
     'subtract': (
         ['y', 'x1', 'x2'], # parameterized vars
         [
@@ -301,7 +299,30 @@ example_macros = {
             ('E:',),
             ('equals', 'y', '_y'),  # copy result back to y
         ],
-        ['_z1', '_z2', '_y']  # locals to suffix at runtime
-    )
+        ['_z1', '_z2', '_y'],  # locals to suffix at runtime
+    ),
+
+    # Recursive macro to compute factorial of x, storing result in y
+    'fact': (
+        ['y', 'x'],
+        [
+            ('zeros', '_y'),
+            ('equals', '_z1', 'x'),
+
+            ('A:',),
+            ('jnz', '_z1', 'B'),
+            ('inc', '_y'),  # base case: fact(0) = 1, so y = 1 
+            ('goto', 'E'),
+
+            ('B:',),
+            ('dec', '_z1'),
+            ('fact', '_z2', '_z1'),  # recursive call
+            ('mul', '_y', '_z2', 'x'),  # multiplies result of recursive call by x
+
+            ('E:',),
+            ('equals', 'y', '_y'),
+        ],
+        ['_z1', '_z2', '_y'],
+    ),
 }
 
