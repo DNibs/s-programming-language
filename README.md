@@ -4,13 +4,13 @@ Author: David Niblick
 
 Start Date: 2 September 2025  
 
-Course: ECE 66400 (Computability, Complexity, and Languages)
+Course: ECE 66400 (Computability, Complexity, and Languages) Fall 2025
 
 Link: https://engineering.purdue.edu/kak/ComputabilityComplexityLanguages/
 
 Instructor: Professor Avinash Kak 
 
-Purdue Universtiy, Robotic Vision Lab
+Purdue University, Robotic Vision Lab
 
 ---
 
@@ -149,4 +149,4 @@ Educational use only. Author retains rights.
 
 ## Use of Gen AI
 
-ChatGPT was used during th development of this code.
+ChatGPT was used during the development of this code.
