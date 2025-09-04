@@ -8,7 +8,7 @@ Course: ECE 66400 (Computability, Complexity, and Languages)
 
 Link: https://engineering.purdue.edu/kak/ComputabilityComplexityLanguages/
 
-Instructor: Professor Avi Kak 
+Instructor: Professor Avinash Kak 
 
 Purdue Universtiy, Robotic Vision Lab
 
