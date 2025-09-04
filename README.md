@@ -17,18 +17,20 @@ Purdue Universtiy, Robotic Vision Lab
 ## Overview
 
 This repository contains a Python interpreter for the minimalist programming language **S**, introduced in ECE66400.  
-Language S is a register-machine–style language defined with only three primitive instructions:
+Language S is defined with only three primitive instructions:
 
 1. `variable = variable + 1`  
 2. `variable = variable - 1` (floored at 0)  
-3. `if variable != 0 goto L`  
+3. `if variable != 0 goto L` 
 
 All computations operate over natural numbers (no negatives).  
-The distinguished output variable **`y`** always starts at 0.  
+The output variable **`y`** always starts at 0.  
 Programs may take multiple input variables (`x1`, `x2`, …).  
 Additional temporary variables are created on demand and start at 0.  
+Macros may be defined for convenient code reuse.
+Labels may be definied for convenient control.
 
-Note that this is only for educational purposes - not very useful for real-world applications.
+Note that this is only for educational purposes and likely not useful for real-world applications.
 
 ---
 
@@ -60,7 +62,7 @@ Note that this is only for educational purposes - not very useful for real-world
   To avoid global variable problems, macros treat _y as a local variable and copy to result y at end.  
 
 - **Macro Exit**  
-  Need to deliberately add [E] at end of macro instead. This is a convenient place to copy _y to result.
+  Need to deliberately add [E] at end of macro. This is a convenient place to copy _y to result.
 
 - **Macro Expansion**  
   Local variable name expansion is currently handled differently than as explained in ECE664 Lec4. However, namespace collision is still avoided.
@@ -75,13 +77,15 @@ A program to add `x1` and `x2` into `y` using two `equals` macro calls and a loo
 ```python
 import s_programming_language as s
 
+# Program to add two numbers x1 and x2, storing result in y
+# as implemented in EC664 lec 3
 program = [
-    ('equals', 'y', 'x1'),   # y = x1
-    ('equals', 'z', 'x2'),   # z = x2
+    ('equals', 'y', 'x1'),   # macro for y <- x1
+    ('equals', 'z', 'x2'),   # macro for z <- x2
 
     ('B:',),
     ('jnz', 'z', 'A'),
-    ('goto', 'E'),
+    ('goto', 'E'),  # macro for (inc _z), (jnz _z 'E') 
 
     ('A:',),
     ('dec', 'z'),
@@ -103,32 +107,29 @@ print(s.run_program(program, {'x1': 7, 'x2': 3}, s.example_macros))  # → 10
 Copies the value of 'x' into 'y' without destroying 'x' but leveraging local variable '_z':
 
 ```python
-"equals": (
-    ["y", "x"],
+# Macro to implement program above
+
+{('add': (
+    ['y', 'x1', 'x2'],
     [
-        ("A:",),
-        ("jnz", "x", "B"),
-        ("goto", "C"),
+        ('equals', '_y', 'x1'),
+        ('equals', '_z', 'x2'),
 
-        ("B:",),
-        ("dec", "x"),
-        ("inc", "y"),
-        ("inc", "_z"),
-        ("goto", "A"),
+        ('B:',),
+        ('jnz', '_z', 'A'),
+        ('goto', 'E'),
 
-        ("C:",),
-        ("jnz", "_z", "D"),
-        ("goto", "E"),
+        ('A:',),
+        ('dec', '_z'),
+        ('inc', '_y'),
+        ('goto', 'B'),
 
-        ("D:",),
-        ("dec", "_z"),
-        ("inc", "x"),
-        ("goto", "C"),
-
-        ("E:",),
+        ('E:',),
+        ('equals', 'y', '_y'),  # copy result back to y, avoids namespace collisions
     ],
-    ["_z"]  # declares local, gets suffix at runtime
-)
+    ['_z', '_y'],  # locals to suffix at runtime
+),
+)}
 ```
 
 When called as '("equals", "y", "x1")', it expands into instructions where labels '(A, B, C, D, E)' and the local '_z' are automatically suffixed (e.g. 'A__m5', '_z__m5') to avoid collisions.
