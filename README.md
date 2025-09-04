@@ -28,6 +28,8 @@ The distinguished output variable **`y`** always starts at 0.
 Programs may take multiple input variables (`x1`, `x2`, …).  
 Additional temporary variables are created on demand and start at 0.  
 
+Note that this is only for educational purposes - not very useful for real-world applications.
+
 ---
 
 ## Features
@@ -41,7 +43,7 @@ Additional temporary variables are created on demand and start at 0.
 - **Macros**  
   Higher-level abstractions built entirely from the three primitives.  
   - **Parameterized**: pass variables and labels as arguments.  
-  - **Locals**: temporary variables declared with a leading underscore (e.g. `_z`) are renamed with a unique suffix at runtime, giving each macro call its own namespace.  
+  - **Locals**: declare local variables to be renamed with a unique suffix at runtime, giving each macro call its own namespace. Uses convention of a prefix underscore (e.g. `_z`)  
   - **Recursive**: macros may call themselves (direct or mutual recursion).  
 
 - **Safety**  
@@ -55,15 +57,16 @@ Additional temporary variables are created on demand and start at 0.
   Must declare the local variables used in macros. See example macros. 
 
 - **Y use in Macros**  
-  To avoid global variable problems, macros treat y as a local variable and copy to result y at end.  
+  To avoid global variable problems, macros treat _y as a local variable and copy to result y at end.  
 
 - **Macro Exit**  
   Need to deliberately add [E] at end of macro instead. This is a convenient place to copy _y to result.
 
 - **Macro Expansion**  
-  Local variable names are currently handled differently than as explained in ECE664 Lec4. However, namespace collision is still avoided.
+  Local variable name expansion is currently handled differently than as explained in ECE664 Lec4. However, namespace collision is still avoided.
 
 ---
+
 
 ## Example 1: Simple Program
 
