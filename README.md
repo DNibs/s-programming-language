@@ -102,9 +102,7 @@ print(s.run_program(program, {'x1': 7, 'x2': 3}, s.example_macros))  # → 10
 
 ## Example 2: Writing a Macro
 
-'equals(y, x)'
-
-Copies the value of 'x' into 'y' without destroying 'x' but leveraging local variable '_z':
+Implements the same program aboe but as a macro for nested reuse.
 
 ```python
 # Macro to implement program above
