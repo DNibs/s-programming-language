@@ -132,7 +132,7 @@ Copies the value of 'x' into 'y' without destroying 'x' but leveraging local var
 )}
 ```
 
-When called as '("equals", "y", "x1")', it expands into instructions where labels '(A, B, C, D, E)' and the local '_z' are automatically suffixed (e.g. 'A__m5', '_z__m5') to avoid collisions.
+When called as '("add", "y", "x1", "x2")', it expands into instructions where labels '(A, B, C, D, E)' and the locals ('_z', '_y') are automatically suffixed (e.g. 'A__m5', '_z__m5') to avoid collisions.
 
 ---
 
