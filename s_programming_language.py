@@ -537,6 +537,39 @@ recursive_macros = {
             ('E:',),
         ],
         [],
+    ),
+
+    'recurse_exponent':(
+        ['y', 'x1', 'x2'],
+        [
+            # transfer to locals
+            ('equals', '_x', 'x1'),
+            ('equals', '_k', 'x2'),
+
+            ('inc', '_y'), # if y=0, result always 0
+            ('jnz', '_k', 'A'), # handles when exp=0
+            ('goto', 'E'),
+
+            ('A:',),
+            ('recurse_exponent_core', '_y', '_x', '_k'),
+
+            ('E:',),
+            ('equals', 'y', '_y'),
+        ],
+        ['_k'],
+    ),
+
+    'recurse_exponent_core':(
+        ['y', 'x', 'k'],
+        [
+            ('A:',),
+            ('mul', 'y', 'y', 'x'),
+            ('dec', 'k'),
+            ('jnz', 'k', 'A'),
+
+            ('E:',),
+        ],
+        [],
     )
 }
 
