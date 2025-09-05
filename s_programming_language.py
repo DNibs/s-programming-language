@@ -4,172 +4,291 @@
 # Final iteration with functional focus, 20250904
 
 from itertools import count
+from copy import deepcopy
 
-
-_call_ids = count()  # unique ids for macro-call namespaces
-
-# --------- Helpers ---------
-
-def _resolve_labels(code, suffix):
+class SMachine:
     """
-    Return (instruction_list, label_map) with labels suffixed by `suffix`.
-    label_map returns index of instruction at label.
-    instr_list no longer contains the labels.
-    """
-    labels, instr_list = {}, []
-    for instr in code:
-        op = instr[0]
-        if op.endswith(":"):
-            labels[op[:-1] + suffix] = len(instr_list)  
-        else:
-            instr_list.append(instr)
-    return instr_list, labels
-
-
-def _find_label_in_frame(label, frame):
-    """
-    Returns program counter (pc) index for given label within given frame.
-    Handles exact or suffixed label.
-    """
-    lbls = frame["labels"]
-    if label in lbls:
-        return lbls[label]
-    # allow unsuffixed label names inside the same frame (e.g., 'A' -> 'A__m7')
-    for k in lbls:
-        if k.startswith(label + "__"):
-            return lbls[k]
-    return None
-
-
-def _jump(stack, target):
-    """
-    Find `target` starting from the current frame, then outward.
-    Mutates stack to position PC at the target frame/index.
-    """
-    # current frame first
-    idx = _find_label_in_frame(target, stack[-1])
-    if idx is not None:
-        stack[-1]["pc"] = idx
-        return
-
-    # walk outward
-    for depth in range(len(stack) - 2, -1, -1):
-        idx = _find_label_in_frame(target, stack[depth])
-        if idx is not None:
-            # pop back to that frame and jump
-            del stack[depth + 1 :]
-            stack[-1]["pc"] = idx
-            return
-
-    raise KeyError(f"Label '{target}' not found in any frame")
-
-# --------- Interpreter ---------
-
-def run_program(instructions, inputs=None, macros=None, max_steps=100_000, trace=False):
-    """
-    S-language interpreter with recursive, parameterized macros and protected namespaces.
-
-    Primitive instructions:
-      ("inc", var)        # var = var + 1
-      ("dec", var)        # var = max(var - 1, 0)
-      ("jnz", var, label) # if var != 0: goto label
-
-    Define labels for convenient control:
-        ("label:",)       # label definition, must end in ":"
-
-    Macros dict format:
-      macros = {
-        "name": ([args...], [code...], [locals...])  # locals optional
-      }
-    """
-    macros = macros or {}
-    inputs = inputs or {}
-
-    # Validate inputs: naturals only
-    for k, v in inputs.items():
-        if not isinstance(v, int) or v < 0:
-            raise ValueError(f"Input {k} must be a non-negative integer, got {v}")
-
-    vars = dict(inputs)
-    vars["y"] = 0
-
-    flat, labels = _resolve_labels(instructions, "")
-    stack = [ {"code": flat, "pc": 0, "labels": labels, "map": {}} ]
-
-    """
-    Each frame in the stack is composed of the following:
-    frame = {
-    "code":   [...],   # list of instructions in this frame
-    "pc":     int,     # program counter (next instruction index)
-    "labels": {...},   # label → instruction index mapping
-    "map":    {...},   # variable/label mapping to account for dynamic namespace suffixes
-    }
+    S-language VM with recursive, parameterized macros and per-call namespaces.
+    Supports step-by-step execution, full state history, and program/macros editing.
     """
 
-    steps = 0
-    while stack and steps < max_steps:
-        frame = stack[-1]
+    # ---------- construction ----------
+
+    def __init__(self, macros=None):
+        self.macros = {}               # name -> (params, code, locals[])
+        if macros:
+            for k, v in macros.items():
+                self.add_macro(k, *v)
+
+        self.inputs = {}
+        self.program_src = []          # raw program with labels
+        self.program_flat = []         # flattened program (no labels)
+        self.program_labels = {}       # label -> index in program_flat
+        self.vars = {}                 # global variable store
+        self.stack = []                # call stack of frames (dicts)
+        self._call_ids = count()       # unique suffix ids
+        self.step_count = 0
+        self.history = []              # list of snapshots
+
+    # ---------- user API: editing ----------
+
+    def set_inputs(self, inputs: dict | None):
+        self.inputs = inputs or {}
+
+    def set_program(self, instructions: list[tuple]):
+        self.program_src = list(instructions)
+
+    def add_instruction(self, instr: tuple):
+        self.program_src.append(instr)
+
+
+    # ---------- macros API ----------
+
+    def list_macros(self) -> list[str]:
+        """Return macro names sorted."""
+        return sorted(self.macros.keys())
+
+    def get_macro(self, name: str):
+        """Return (params, code, locals) or raise KeyError."""
+        if name not in self.macros:
+            raise KeyError(f"Unknown macro '{name}'")
+        params, code, locals_ = self.macros[name]
+        return list(params), list(code), list(locals_)
+
+    def add_macro(self, name: str, params: list, code: list, locals_: list | None = None, overwrite: bool = True):
+        """
+        Add or replace a macro.
+        - params: list of formal parameter names
+        - code: list of instruction tuples
+        - locals_: list of local names (optional)
+        - overwrite=False will error if the macro exists
+        """
+        if not isinstance(name, str) or not name:
+            raise ValueError("Macro name must be a non-empty string")
+        if not isinstance(params, list) or not all(isinstance(p, str) for p in params):
+            raise ValueError("params must be a list[str]")
+        if not isinstance(code, list) or not all(isinstance(t, tuple) and t for t in code):
+            raise ValueError("code must be a list[non-empty tuple]")
+        if locals_ is None:
+            locals_ = []
+        if not isinstance(locals_, list) or not all(isinstance(z, str) for z in locals_):
+            raise ValueError("locals must be a list[str]")
+
+        if not overwrite and name in self.macros:
+            raise ValueError(f"Macro '{name}' already exists")
+        self.macros[name] = (list(params), list(code), list(locals_))
+
+    def add_macros(self, macro_dict: dict, overwrite: bool = True):
+        """Batch add macros from {name: (params, code, [locals])}."""
+        if not isinstance(macro_dict, dict):
+            raise ValueError("macro_dict must be a dict")
+        for k, v in macro_dict.items():
+            if not (isinstance(v, tuple) and 2 <= len(v) <= 3):
+                raise ValueError(f"Bad macro spec for '{k}'")
+            params, code = v[0], v[1]
+            locals_ = v[2] if len(v) == 3 else []
+            self.add_macro(k, params, code, locals_, overwrite=overwrite)
+
+    def remove_macro(self, name: str):
+        """Delete a macro. No error if absent."""
+        self.macros.pop(name, None)
+
+    def remove_macros(self, *names: str):
+        """Batch delete macros."""
+        for n in names:
+            self.macros.pop(n, None)
+
+    # ---------- pretty printers ----------
+
+    def print_macros(self):
+        """Print all macro names and arities."""
+        for name in self.list_macros():
+            params, _, locals_ = self.macros[name]
+            print(f"{name}({', '.join(params)})  locals=[{', '.join(locals_)}]")
+
+    def print_macro(self, name: str):
+        """Pretty-print a single macro."""
+        params, code, locals_ = self.get_macro(name)
+        print(f"macro {name}({', '.join(params)})  locals=[{', '.join(locals_)}]")
+        for instr in code:
+            if instr[0].endswith(":"):
+                print(f"  {instr[0]}")
+            else:
+                print(f"  {instr}")
+
+    # ---------- execution control ----------
+
+    def reset(self):
+        self._validate_inputs()
+        self.vars = dict(self.inputs)
+        self.vars.setdefault("y", 0)
+        self.program_flat, self.program_labels = self._resolve_labels(self.program_src, "")
+        self.stack = [self._make_frame(self.program_flat, self.program_labels, {})]
+        self.step_count = 0
+        self.history = []
+        # capture initial state
+        self._save_snapshot(current_instr=self._peek_next_instr())
+
+    def run(self, max_steps=100_000, trace=False):
+        if not self.stack:
+            self.reset()
+        while self.stack and self.step_count < max_steps:
+            self.step(trace=trace)
+        if self.step_count >= max_steps:
+            raise RuntimeError("Maximum step count exceeded; possible undefined condition")
+        return self.vars.get("y", 0)
+
+    def step(self, trace=False):
+        """Execute exactly one instruction (or return from a frame). Saves state."""
+        if not self.stack:
+            return False  # halted
+
+        frame = self.stack[-1]
         code, pc, mapping = frame["code"], frame["pc"], frame["map"]
 
+        # finished frame → pop and save state
         if pc >= len(code):
-            stack.pop()  # return from macro / end of program
-            continue
+            self.stack.pop()
+            self._save_snapshot(current_instr=self._peek_next_instr())
+            return bool(self.stack)
 
         instr = code[pc]
         op, *args = instr
 
         if trace:
-            print(f"step={steps} depth={len(stack)} pc={pc} instr={instr} vars={vars}\n")
+            print(f"step={self.step_count} depth={len(self.stack)} pc={pc} instr={instr} vars={self.vars}")
 
-        # --- primitives ---
+        # primitives
         if op == "inc":
-            v = mapping.get(args[0], args[0])  # get mapping if exists, otherwise return arg
-            vars[v] = vars.get(v, 0) + 1  # if var value doesn't exist, assume it is 0
+            v = mapping.get(args[0], args[0])
+            self.vars[v] = self.vars.get(v, 0) + 1
             frame["pc"] += 1
 
         elif op == "dec":
             v = mapping.get(args[0], args[0])
-            vars[v] = max(0, vars.get(v, 0) - 1)  # floors to 0
+            self.vars[v] = max(0, self.vars.get(v, 0) - 1)
             frame["pc"] += 1
 
         elif op == "jnz":
             v = mapping.get(args[0], args[0])
             target_raw = args[1]
             target = mapping.get(target_raw, target_raw)
-            if vars.get(v, 0) != 0:
-                _jump(stack, target)
+            if self.vars.get(v, 0) != 0:
+                self._jump(target)
             else:
                 frame["pc"] += 1
 
-        # --- macro call ---
-        elif op in macros:
-            formal_args, body, *maybe_locals = macros[op]
-            locals_list = maybe_locals[0] if maybe_locals else []
-            if len(args) != len(formal_args):
-                raise ValueError(f"Macro {op} expects {len(formal_args)} args, got {len(args)}")
-
-            # Build per-call mapping: formal_args -> actuals, locals -> suffixed locals
-            call_id = next(_call_ids)
+        # macro call
+        elif op in self.macros:
+            params, body, locals_list = self.macros[op]
+            if len(args) != len(params):
+                raise ValueError(f"Macro {op} expects {len(params)} args, got {len(args)}")
+            call_id = next(self._call_ids)
             suffix = f"__m{call_id}"
-            new_map = {f: mapping.get(a,a) for f, a in zip(formal_args, args)}
+            new_map = {p: mapping.get(a, a) for p, a in zip(params, args)}
             for loc in locals_list:
                 new_map[loc] = f"{loc}{suffix}"
-
-            flat_body, body_labels = _resolve_labels(body, suffix)
-
-            # advance caller, push callee
+            flat_body, body_labels = self._resolve_labels(body, suffix)
             frame["pc"] += 1
-            stack.append({"code": flat_body, "pc": 0, "labels": body_labels, "map": new_map})
+            self.stack.append(self._make_frame(flat_body, body_labels, new_map))
 
         else:
             raise ValueError(f"Unknown instruction {op}")
 
-        steps += 1
+        self.step_count += 1
+        self._save_snapshot(current_instr=self._peek_next_instr())
+        return True
 
-    if steps >= max_steps:
-        raise RuntimeError("Maximum step count exceeded; possible undefined condition")
+    # ---------- inspection, history, rewind ----------
 
-    return vars["y"]
+    def state(self):
+        """Return current state (shallow copy for quick inspection)."""
+        return {
+            "step": self.step_count,
+            "vars": dict(self.vars),
+            "stack_depth": len(self.stack),
+            "next_instr": self._peek_next_instr(),
+            "top_frame": deepcopy(self.stack[-1]) if self.stack else None,
+        }
+
+    def print_state(self, idx: int | None = None):
+        s = self.history[idx] if idx is not None else self.state()
+        print(f"step={s['step']} depth={s.get('stack_depth', 0)} next={s.get('next_instr')}")
+        print("vars:", {k: v for k, v in sorted(s["vars"].items())})
+
+    def rewind(self, idx: int):
+        """Restore machine to a previous snapshot index."""
+        snap = self.history[idx]
+        # deep restore to avoid aliasing
+        self.vars = deepcopy(snap["vars"])
+        self.stack = deepcopy(snap["stack"])
+        self.step_count = snap["step"]
+        # keep program/macros as-is
+
+
+    # ---------- internals ----------
+
+    @staticmethod
+    def _make_frame(code, labels, mapping):
+        return {"code": list(code), "pc": 0, "labels": dict(labels), "map": dict(mapping)}
+
+    @staticmethod
+    def _resolve_labels(code, suffix):
+        labels, flat = {}, []
+        for instr in code:
+            op = instr[0]
+            if op.endswith(":"):
+                labels[op[:-1] + suffix] = len(flat)
+            else:
+                flat.append(instr)
+        return flat, labels
+
+    def _find_label_in_frame(self, label, frame):
+        lbls = frame["labels"]
+        if label in lbls:
+            return lbls[label]
+        for k in lbls:
+            if k.startswith(label + "__"):
+                return lbls[k]
+        return None
+
+    def _jump(self, target):
+        # current frame
+        idx = self._find_label_in_frame(target, self.stack[-1])
+        if idx is not None:
+            self.stack[-1]["pc"] = idx
+            return
+        # outward search
+        for d in range(len(self.stack) - 2, -1, -1):
+            idx = self._find_label_in_frame(target, self.stack[d])
+            if idx is not None:
+                del self.stack[d + 1 :]
+                self.stack[-1]["pc"] = idx
+                return
+        raise KeyError(f"Label '{target}' not found in any frame")
+
+    def _peek_next_instr(self):
+        if not self.stack:
+            return None
+        fr = self.stack[-1]
+        if fr["pc"] >= len(fr["code"]):
+            return None
+        return fr["code"][fr["pc"]]
+
+    def _save_snapshot(self, current_instr):
+        # deep snapshot so history is immutable
+        self.history.append({
+            "step": self.step_count,
+            "vars": deepcopy(self.vars),
+            "stack": deepcopy(self.stack),
+            "stack_depth": len(self.stack),
+            "next_instr": deepcopy(current_instr),
+        })
+
+    def _validate_inputs(self):
+        for k, v in (self.inputs or {}).items():
+            if not isinstance(v, int) or v < 0:
+                raise ValueError(f"Input {k} must be a non-negative integer, got {v}")
 
 
 # Macros for the S-language interpreter.

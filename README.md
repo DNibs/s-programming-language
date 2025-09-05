@@ -56,10 +56,10 @@ Note that this is only for educational purposes and likely not useful for real-w
 ## Differences from ECE664
 
 - **Declare Local Variables in Macros**  
-  Must declare the local variables used in macros. See example macros. 
+  Currently, local variables must be declared instead of assuming all inputs are copied to local variables.
 
 - **Y use in Macros**  
-  To avoid global variable problems, macros treat _y as a local variable and copy to result y at end.  
+  To avoid global variable problems, macros treat _y as a local variable and copy to result y at end. Alternate approach is to zero y at the beginning of each macro.  
 
 - **Macro Exit**  
   Need to deliberately add [E] at end of macro. This is a convenient place to copy _y to result.
@@ -95,7 +95,14 @@ program = [
     ('E:',),
 ]
 
-print(s.run_program(program, {'x1': 7, 'x2': 3}, s.example_macros))  # → 10
+
+vm = s.SMachine(s.example_macros)
+vm.set_inputs({"x1": 2, "x2": 3})
+vm.set_program(program)
+
+# run fully
+print(vm.run())            # 5
+
 ```
 
 ---
@@ -107,7 +114,7 @@ Implements the same program aboe but as a macro for nested reuse.
 ```python
 # Macro to implement program above
 
-{('add': (
+new_macros = {'add': (
     ['y', 'x1', 'x2'],
     [
         ('equals', '_y', 'x1'),
@@ -127,12 +134,36 @@ Implements the same program aboe but as a macro for nested reuse.
     ],
     ['_z', '_y'],  # locals to suffix at runtime
 ),
-)}
+}
+
+vm.add_macros(new_macros)
 ```
 
 When called as '("add", "y", "x1", "x2")', it expands into instructions where labels '(A, B, C, D, E)' and the locals ('_z', '_y') are automatically suffixed (e.g. 'A__m5', '_z__m5') to avoid collisions.
 
 ---
+
+
+## Example 3: Inspect State
+
+View internal working of S as it iterates through a program.
+
+```python
+# inspect history
+vm.print_state(-1)         # last state
+vm.rewind(0)               # back to initial snapshot
+vm.print_state()           # show current (rewound) state
+
+# step-by-step
+vm.reset()
+while vm.step(trace=True):
+    pass
+print("y =", vm.vars["y"])
+
+```
+
+---
+
 
 ## Theoretical Context
 
