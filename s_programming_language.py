@@ -490,7 +490,7 @@ recursive_macros = {
     'recurse_mul_core':(
         ['y', 'x', 'k'],
         [
-            # since wrapper alreayd transfered to locals, not needed here
+            # since wrapper already transfered to locals, not needed here
             ('A:',),
             ('jnz', 'k', 'B'),
             ('goto', 'E'),
@@ -528,7 +528,7 @@ recursive_macros = {
     'recurse_factorial_core':(
         ['y', 'x'],
         [
-
+            # since wrapper already transfered to locals, not needed here
             ('A:',),
             ('mul', 'y', 'y', 'x'),
             ('dec', 'x'),
@@ -562,8 +562,9 @@ recursive_macros = {
     'recurse_exponent_core':(
         ['y', 'x', 'k'],
         [
+            # since wrapper already transfered to locals, not needed here
             ('A:',),
-            ('mul', 'y', 'y', 'x'),
+            ('recurse_mul', 'y', 'y', 'x'),
             ('dec', 'k'),
             ('jnz', 'k', 'A'),
 
