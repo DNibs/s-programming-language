@@ -292,7 +292,7 @@ class SMachine:
 
 # Macros for the S-language interpreter.
 # These macros implement common operations like addition, subtraction, and equality checks.
-example_macros = {
+example_ece664_macros = {
 
     # Unconditional jump using local dummy _z
     "goto": (
@@ -436,28 +436,107 @@ example_macros = {
         ],
         ['_z1', '_z2', '_y'], 
     ),
+}
 
-    # Recursive macro to compute factorial of x, storing result in y
-    'fact': (
+recursive_macros = {
+    'recurse_add':(
+        ['y', 'x1', 'x2'],
+        [
+            # transfer to locals
+            ('equals', '_x1', 'x1'),
+            ('equals', '_x2', 'x2'),
+
+            ('equals', '_y', '_x1'),
+            ('recurse_add_core', '_y', '_x2'),
+
+            # transfer result
+            ('equals', 'y', '_y'),
+        ],
+        ['_x1', '_x2', '_y'],
+    ),
+    'recurse_add_core':(
         ['y', 'x'],
         [
-            ('zeros', '_y'),
-            ('equals', '_z1', 'x'),
-
+            # since wrapper alreayd transfered to locals, not needed here
             ('A:',),
-            ('jnz', '_z1', 'B'),
-            ('inc', '_y'),  # base case: fact(0) = 1, so y = 1 
+            ('jnz', 'x', 'B'),
             ('goto', 'E'),
 
             ('B:',),
-            ('dec', '_z1'),
-            ('fact', '_z2', '_z1'),  # recursive call
-            ('mul', '_y', '_z2', 'x'),  # multiplies result of recursive call by x
+            ('inc', 'y'),
+            ('dec', 'x'),
+            ('recurse_add_core', 'y', 'x'),
+
+            ('E:',),  
+        ],
+        [],
+    ),
+
+    'recurse_mul':(
+        ['y', 'x1', 'x2'],
+        [
+            # transfer to locals
+            ('equals', '_x', 'x1'),
+            ('equals', '_k', 'x2'),
+
+            ('recurse_mul_core', '_y', '_x', '_k'),
+
+            # transfer result
+            ('equals', 'y', '_y'),
+        ],
+        ['_x', '_k', '_y'],
+    ),
+
+    'recurse_mul_core':(
+        ['y', 'x', 'k'],
+        [
+            # since wrapper alreayd transfered to locals, not needed here
+            ('A:',),
+            ('jnz', 'k', 'B'),
+            ('goto', 'E'),
+
+            ('B:',),
+            ('recurse_add', 'y', 'x', 'y'), # recurse all the way through, baby!
+            ('dec', 'k'),
+            ('recurse_mul_core', 'y', 'x', 'k'),
+
+            ('E:',),  
+
+        ],
+        [],
+
+    ),
+    
+    'recurse_factorial':(
+        ['y', 'x'],
+        [
+            # transfer to locals
+            ('equals', '_x', 'x'),
+            ('inc', '_y'),  # base case y=1 when x=0
+            ('jnz', '_x', 'A'), # handles when x=0
+            ('goto', 'E'),
+
+            ('A:',),
+            ('recurse_factorial_core', '_y', '_x'),
 
             ('E:',),
             ('equals', 'y', '_y'),
         ],
-        ['_z1', '_z2', '_y'],
+        [],
     ),
+
+    'recurse_factorial_core':(
+        ['y', 'x'],
+        [
+
+            ('A:',),
+            ('mul', 'y', 'y', 'x'),
+            ('dec', 'x'),
+            ('jnz', 'x', 'A'),
+
+            ('E:',),
+        ],
+        [],
+    )
 }
 
