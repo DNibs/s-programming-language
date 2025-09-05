@@ -56,10 +56,10 @@ Note that this is only for educational purposes and likely not useful for real-w
 ## Differences from ECE664
 
 - **Declare Local Variables in Macros**  
-  Currently, local variables must be declared instead of assuming all inputs are copied to local variables.
+  Currently, local variables must be declared instead of assuming all inputs are copied to local variables. While future work might automate this global->local transition upon macro calls (as lsn 4 dictates), for now must be manually done within custom macros 
 
 - **Y use in Macros**  
-  To avoid global variable problems, macros treat _y as a local variable and copy to result y at end. Alternate approach is to zero y at the beginning of each macro.  
+  In addition to above, user should also declare a local 'y' macro (usually '_y' in examples) and copy to result y at end. Alternate approach is to zero y at the beginning of each macro. Otherwise, namespace collisions will cause drift to results.  
 
 - **Macro Exit**  
   Need to deliberately add [E] at end of macro. This is a convenient place to copy _y to result.
