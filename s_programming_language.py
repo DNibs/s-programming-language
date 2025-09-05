@@ -1,7 +1,6 @@
 # s_programming_language.py
 # Author: David Niblick
 # Date: 20250903
-# Final iteration with functional focus, 20250904
 
 from itertools import count
 from copy import deepcopy
@@ -98,8 +97,6 @@ class SMachine:
         for n in names:
             self.macros.pop(n, None)
 
-    # ---------- pretty printers ----------
-
     def print_macros(self):
         """Print all macro names and arities."""
         for name in self.list_macros():
@@ -129,10 +126,12 @@ class SMachine:
         # capture initial state
         self._save_snapshot(current_instr=self._peek_next_instr())
 
-    def run(self, max_steps=100_000, trace=False):
+    def run(self, max_steps=100_000, print_steps=None, trace=False):
         if not self.stack:
             self.reset()
         while self.stack and self.step_count < max_steps:
+            if (print_steps and self.step_count > 0) and (self.step_count % print_steps == 0):
+                print(f'Executing step {self.step_count}')
             self.step(trace=trace)
         if self.step_count >= max_steps:
             raise RuntimeError("Maximum step count exceeded; possible undefined condition")
