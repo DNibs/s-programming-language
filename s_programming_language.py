@@ -594,6 +594,7 @@ recursive_macros = {
     ),
 
     'recurse_prim_sub': (
+        # returns 0 if x2>x1, returns x1-x2 otherwise
         ['y', 'x1', 'x2'],
         [
             ('equals', '_x1', 'x1'),
@@ -632,6 +633,35 @@ recursive_macros = {
             ('equals', 'y', 'x1')
         ],
         [],
+    ),
+
+    'recurse_abs_dif': (
+        ['y', 'x1', 'x2'],
+        [
+            ('equals', '_x1', 'x1'),
+            ('equals', '_x2', 'x2'),
+            ('equals', '_y', 'y'),
+
+            ('recurse_prim_sub', '_z1', '_x1', '_x2'),
+            ('recurse_prim_sub', '_z2', '_x2', '_x1'),
+            ('recurse_add', '_y', '_z1', '_z2'),
+
+            ('equals', 'y', '_y'),
+        ],
+        ['_y', '_x1', '_x2', '_z1', '_z2'],
+    ),
+
+    'alpha_pred': (
+        # returns 1 if x is 0, returns 0 otherwise
+        ['y', 'x'],
+        [
+            ('equals', '_x', 'x'),
+            ('inc', '_z'),
+
+            ('recurse_prim_sub', 'y', '_z', '_x'),
+
+        ],
+        ['_x', '_z'],
     ),
 }
 
