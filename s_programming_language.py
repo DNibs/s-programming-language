@@ -571,6 +571,67 @@ recursive_macros = {
             ('E:',),
         ],
         [],
-    )
+    ),
+
+    'pred': (
+        # Note: this macro is superfluous since S already floors at 0
+        # For educational purposes to illustrate what pred could look like
+        ['y', 'x'],
+        [
+            ('equals', '_x', 'x'),
+
+            ('jnz', '_x', 'A'),
+            ('goto', 'E'),
+
+            ('A:',),
+            ('dec', '_x'),
+            ('equals', '_y', '_x'),
+
+            ('E:',),
+            ('equals', 'y', '_y'),
+        ],
+        ['_y', '_x'],
+    ),
+
+    'recurse_prim_sub': (
+        ['y', 'x1', 'x2'],
+        [
+            ('equals', '_x1', 'x1'),
+            ('equals', '_x2', 'x2'),
+            ('equals', '_y', 'y'),
+
+            ('jnz', '_x2', 'A'),
+            ('equals', '_y', '_x1'),
+            ('goto', 'E'),
+
+            ('A:',),
+            ('recurse_prim_sub_core', '_y', '_x1', '_x2'),
+
+            ('E:',),
+            ('equals', 'y', '_y'),
+        ],
+        ['_y', '_x1', '_x2'],
+    ),
+
+    'recurse_prim_sub_core': (
+        ['y', 'x1', 'x2'],
+        [
+            ('jnz', 'x1', 'A'),
+            ('goto', 'E'),
+
+            ('A:',),
+            ('jnz', 'x2', 'B'),
+            ('goto', 'E'),
+
+            ('B:',),
+            ('dec', 'x1'),
+            ('dec', 'x2'),
+            ('recurse_prim_sub_core', 'y', 'x1', 'x2'),
+
+            ('E:',),
+            ('equals', 'y', 'x1')
+        ],
+        [],
+    ),
 }
 
