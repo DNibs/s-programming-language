@@ -812,6 +812,35 @@ recursive_macros = {
         ['_y', '_x1', '_x2', '_z1', '_z2'],
     ),
 
+    'n_prime': (
+        # returns the xth prime number
+        # if x=0, returns 0
+        # note - this does not implement upper bound checking from ece664lsn6
+        # mostly because this is slow enough as is...
+        ['y', 'x'], 
+        [
+            ('equals','_x', 'x'),
+            ('jnz', '_x', 'A'), # sinze n0 = 0
+            ('goto', 'E'),
+
+            ('A:',),
+            ('inc', '_z1'),
+            ('prime', '_z2', '_z1'),
+            ('jnz', '_z2', 'B'),
+            ('goto', 'A'),
+
+            ('B:',),
+            ('inc', '_z3'),
+            ('less_than_or_equal', '_z4', '_x', '_z3'),
+            ('jnz', '_z4', 'E'),
+            ('goto', 'A'),
+
+            ('E:',),
+            ('equals', 'y', '_z1'),  
+        ], 
+        ['_y', '_x', '_z1', '_z2', '_z3', '_z4'],
+    ),
+
 
 }
 
