@@ -795,5 +795,23 @@ recursive_macros = {
         ['_x1', '_x2', '_y', '_z1', '_z2'],
     ),
 
+    'remainder': (
+        # remainder when x1 is divided by x2
+        # note - if x2 is 0, this will loop forever
+        ['y', 'x1', 'x2'], 
+        [
+            ('equals','_x1', 'x1'),
+            ('equals', '_x2', 'x2'),
+
+            ('integral_quotient', '_z1', '_x1', '_x2'),
+            ('mul', '_z2', '_x2', '_z1'),
+            ('recurse_prim_sub', '_y', '_x1', '_z2'),
+
+            ('equals','y','_y'),
+        ], 
+        ['_y', '_x1', '_x2', '_z1', '_z2'],
+    ),
+
+
 }
 
