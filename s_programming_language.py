@@ -742,5 +742,36 @@ recursive_macros = {
         ], 
         ['_y', '_x1', '_x2', '_z1', '_z2', '_z3'],
     ),
+
+    'prime': (
+        # returns 1 if x1 is prime
+        ['y', 'x'], 
+        [
+
+            ('equals','_x', 'x'),
+            ('equals', '_z2', '_x'),
+
+            ('inc', '_z1'), # counter starts at 2 (when inc below as well)
+            ('dec', '_z2'), # check that x > 1
+            ('jnz', '_z2', 'A'),
+            ('goto', 'E'), # if x was 0 or 1, skip to end and return 0
+            
+            ('A:',),
+            ('inc', '_z1'),
+            ('equal_test', '_z3', '_z1', '_x'), # check that counter==x
+            ('jnz', '_z3', 'B'), # if we make it to counter=x, then x is prime
+            ('divisor', '_z4', '_z1', '_x'),
+            ('jnz', '_z4', 'E'), # if z4 is 1, x is not prime
+            ('goto', 'A'),
+
+            ('B:',),
+            ('inc', '_y'),
+            ('goto', 'E'),
+
+            ('E:',),
+            ('equals','y','_y'),
+        ], 
+        ['_y', '_x1', '_x2', '_z1', '_z2', '_z3', '_z4'],
+    ),
 }
 
