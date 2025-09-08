@@ -668,7 +668,6 @@ recursive_macros = {
         # returns 1 if x1 == x2, returns 0 otherwise
         ['y', 'x1', 'x2'], 
         [
-            ('equals', '_y', 'y'),
             ('equals','_x1', 'x1'),
             ('equals', '_x2', 'x2'),
 
@@ -684,7 +683,6 @@ recursive_macros = {
         # returns 1 if x1 <= x2 else 0
         ['y', 'x1', 'x2'], 
         [
-            ('equals', '_y', 'y'),
             ('equals','_x1', 'x1'),
             ('equals', '_x2', 'x2'),
 
@@ -700,7 +698,6 @@ recursive_macros = {
         # returns 1 if x1 < x2 else 0
         ['y', 'x1', 'x2'], 
         [
-            ('equals', '_y', 'y'),
             ('equals','_x1', 'x1'),
             ('equals', '_x2', 'x2'),
 
@@ -719,7 +716,6 @@ recursive_macros = {
         # note - this is where things start to slow down!
         ['y', 'x1', 'x2'], 
         [
-            ('equals', '_y', 'y'),
             ('equals','_x1', 'x1'),
             ('equals', '_x2', 'x2'),
             ('equals', '_z1', '_x2'),
