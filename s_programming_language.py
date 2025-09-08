@@ -663,5 +663,56 @@ recursive_macros = {
         ],
         ['_x', '_z'],
     ),
+
+    'equal_test': (
+        # returns 1 if x1 == x2, returns 0 otherwise
+        ['y', 'x1', 'x2'], 
+        [
+            ('equals', '_y', 'y'),
+            ('equals','_x1', 'x1'),
+            ('equals', '_x2', 'x2'),
+
+            ('recurse_abs_dif', '_z', '_x1', '_x2'),
+            ('alpha_pred', '_y', '_z'),
+
+            ('equals','y','_y'),
+        ], 
+        ['_y', '_x1', '_x2', '_z'],
+    ),
+
+    'less_than_or_equal': (
+        # returns 1 if x1 <= x2 else 0
+        ['y', 'x1', 'x2'], 
+        [
+            ('equals', '_y', 'y'),
+            ('equals','_x1', 'x1'),
+            ('equals', '_x2', 'x2'),
+
+            ('recurse_prim_sub', '_z', '_x1', '_x2'),
+            ('alpha_pred', '_y', '_z'),
+
+            ('equals','y','_y'),
+        ], 
+        ['_y', '_x1', '_x2', '_z'],
+    ),
+
+    'less_than': (
+        # returns 1 if x1 < x2 else 0
+        ['y', 'x1', 'x2'], 
+        [
+            ('equals', '_y', 'y'),
+            ('equals','_x1', 'x1'),
+            ('equals', '_x2', 'x2'),
+
+            ('less_than_or_equal', '_z1', '_x1', '_x2'),
+            ('equal_test', '_z2', '_x1', '_x2'), 
+            ('recurse_abs_dif', '_y', '_z1', '_z2'), # if x1==x2, then z1=1, z2=1, so y=0
+
+            ('equals','y','_y'),
+        ], 
+        ['_y', '_x1', '_x2', '_z1', '_z2'],
+    ),
+
+    
 }
 
