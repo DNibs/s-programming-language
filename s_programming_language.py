@@ -713,6 +713,34 @@ recursive_macros = {
         ['_y', '_x1', '_x2', '_z1', '_z2'],
     ),
 
-    
+    'divisor': (
+        # returns 1 if x1 is a divisor of x2 else 0
+        # eg. 3 is a divisor of 12, 3 is NOT a divisor of 13
+        # note - this is where things start to slow down!
+        ['y', 'x1', 'x2'], 
+        [
+            ('equals', '_y', 'y'),
+            ('equals','_x1', 'x1'),
+            ('equals', '_x2', 'x2'),
+            ('equals', '_z1', '_x2'),
+            
+            ('A:',),
+            #('recurse_mul', '_z2', '_z1', '_x1'),  # for theoretical completeness this works, but slow
+            ('mul', '_z2', '_z1', '_x1'), # really speeds it up
+            ('equal_test', '_z3', '_z2', '_x2'), # tests k*x1==x2
+            ('jnz', '_z3', 'B'), # if so, go to B to set y=1
+            ('dec', '_z1'),
+            ('jnz', '_z1', 'A'),
+            ('goto', 'E'),
+
+            ('B:',),
+            ('inc', '_y'),
+            ('goto', 'E'),
+
+            ('E:',),
+            ('equals','y','_y'),
+        ], 
+        ['_y', '_x1', '_x2', '_z1', '_z2', '_z3'],
+    ),
 }
 
