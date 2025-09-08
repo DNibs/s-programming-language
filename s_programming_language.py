@@ -769,5 +769,31 @@ recursive_macros = {
         ], 
         ['_y', '_x1', '_x2', '_z1', '_z2', '_z3', '_z4'],
     ),
+
+    'integral_quotient':(
+        # returns integer portion of division for x1/x2
+        # note - if x2=0, will loop indefinitely
+        ['y', 'x1', 'x2'],
+        [
+            # transfer to locals
+            ('equals', '_x1', 'x1'),
+            ('equals', '_x2', 'x2'),
+
+            ('A:',),
+            #('recursive_mul', '_z2', '_z1', '_x2'),  # for theory completeness
+            ('mul', '_z1', '_y', '_x2'),  # faster, same behavior
+            ('less_than', '_z2', '_x1', '_z1'),
+            ('jnz', '_z2', 'E'),
+            ('inc', '_y'),
+            ('goto', 'A'),
+
+            ('E:',),
+            ('dec', '_y'),
+            ('equals', 'y', '_y'),
+            
+        ],
+        ['_x1', '_x2', '_y', '_z1', '_z2'],
+    ),
+
 }
 
