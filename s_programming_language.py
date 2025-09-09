@@ -772,9 +772,7 @@ primitive_recursive_ece664_macros = {
 
     'integral_quotient':(
         # returns integer portion of division for x1/x2
-        # note - if x2=0, will loop indefinitely
-        # THIS IS NOT A TOTALLY COMPUTABLE FUNCTION, and therefore not a primititve recursive!!!
-        # needs better definition for when x2=0
+        # note - if x2=0, will output 0 because of definition that t<=x1
         ['y', 'x1', 'x2'],
         [
             # transfer to locals
@@ -786,22 +784,26 @@ primitive_recursive_ece664_macros = {
             ('mul', '_z1', '_y', '_x2'),  # faster, same behavior
             ('less_than', '_z2', '_x1', '_z1'),
             ('jnz', '_z2', 'E'),
+            ('less_than', '_z3', '_x1', '_y'), # check for upper bound of t<=x
+            ('jnz', '_z3', 'B'), 
             ('inc', '_y'),
             ('goto', 'A'),
+
+            ('B:', ),
+            ('zeros', '_y'),
+            ('goto', 'E'),
 
             ('E:',),
             ('dec', '_y'),
             ('equals', 'y', '_y'),
             
         ],
-        ['_x1', '_x2', '_y', '_z1', '_z2'],
+        ['_x1', '_x2', '_y', '_z1', '_z2', '_z3'],
     ),
 
     'remainder': (
         # remainder when x1 is divided by x2
-        # note - if x2 is 0, this will loop forever
-        # THIS IS NOT A TOTALLY COMPUTABLE FUNCTION, and therefore not a primititve recursive!!!
-        # needs better definition for when x2=0
+        # note - if x2 is 0, will output x1 given definition of 'integral quotient' from ece664
         ['y', 'x1', 'x2'], 
         [
             ('equals','_x1', 'x1'),
