@@ -71,6 +71,9 @@ Note that this is only for educational purposes and likely not useful for real-w
 - **Macro Expansion**  
   Local variable name expansion is currently handled differently than as explained in ECE664 Lec4. However, namespace collision is still avoided.
 
+- **Rigorous Adherance in Recursive Primitives**  
+  Some work still needs to be done to ensure the recursive_primitive_ece664_macros all adhere to ECE664 analytical definitions in a rigorous manner. 
+
 ---
 
 
