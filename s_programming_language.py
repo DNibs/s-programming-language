@@ -438,7 +438,7 @@ example_ece664_macros = {
     ),
 }
 
-recursive_macros = {
+primitive_recursive_ece664_macros = {
     'recurse_add':(
         ['y', 'x1', 'x2'],
         [
@@ -773,6 +773,8 @@ recursive_macros = {
     'integral_quotient':(
         # returns integer portion of division for x1/x2
         # note - if x2=0, will loop indefinitely
+        # THIS IS NOT A TOTALLY COMPUTABLE FUNCTION, and therefore not a primititve recursive!!!
+        # needs better definition for when x2=0
         ['y', 'x1', 'x2'],
         [
             # transfer to locals
@@ -798,6 +800,8 @@ recursive_macros = {
     'remainder': (
         # remainder when x1 is divided by x2
         # note - if x2 is 0, this will loop forever
+        # THIS IS NOT A TOTALLY COMPUTABLE FUNCTION, and therefore not a primititve recursive!!!
+        # needs better definition for when x2=0
         ['y', 'x1', 'x2'], 
         [
             ('equals','_x1', 'x1'),

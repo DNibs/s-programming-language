@@ -48,6 +48,10 @@ Note that this is only for educational purposes and likely not useful for real-w
   - **Locals**: declare local variables to be renamed with a unique suffix at runtime, giving each macro call its own namespace. Uses convention of a prefix underscore (e.g. `_z`)  
   - **Recursive**: macros may call themselves (direct or mutual recursion).  
 
+- **Example Macros from ECE664**  
+  Two sets of example macros derived from ECE664 are given. First is the set (example_ece664_macros) provides basic functions (add, equals, etc.).
+  The second set provides the foundation of primitive recursive functions which are computable across all inputs of the domain of natural numbers. Note that, given their recursive nature, they tend to be slower.
+
 - **Safety**  
   Step limit prevents runaway infinite loops.  
 
@@ -96,7 +100,7 @@ program = [
 ]
 
 
-vm = s.SMachine(s.example_macros)
+vm = s.SMachine(s.example_ece664_macros)
 vm.set_inputs({"x1": 2, "x2": 3})
 vm.set_program(program)
 

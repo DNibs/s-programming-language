@@ -4,7 +4,7 @@ import s_programming_language as s
 # program: y = x1 + x2
 prog = [("add","y","x1","x2")]
 
-vm = s.SMachine(s.example_macros)
+vm = s.SMachine(s.example_ece664_macros)
 vm.set_inputs({"x1": 2, "x2": 3})
 vm.set_program(prog)
 
